@@ -52,16 +52,19 @@
 #define FID_EMERGENCY_SHUTDOWN 22
 #define FID_VELOCITY_REACHED 23
 #define FID_CURRENT_VELOCITY 24
+#define FID_SET_CURRENT_CALLBACK_THRESHOLD 25
+#define FID_GET_CURRENT_CALLBACK_THRESHOLD 26
+#define FID_CURRENT_THRESHOLD_REACHED 27
 
 #ifdef ENCODER
-#define FID_ENABLE_ENCODER 25
-#define FID_DISABLE_ENCODER 26
-#define FID_IS_ENCODER_ENABLED 27
-#define FID_GET_ENCODER_COUNT 28
-#define FID_SET_ENCODER_CONFIG 29
-#define FID_GET_ENCODER_CONFIG 30
-#define FID_SET_ENCODER_PID_CONFIG 31
-#define FID_GET_ENCODER_PID_CONFIG 32
+#define FID_ENABLE_ENCODER 28
+#define FID_DISABLE_ENCODER 29
+#define FID_IS_ENCODER_ENABLED 30
+#define FID_GET_ENCODER_COUNT 31
+#define FID_SET_ENCODER_CONFIG 32
+#define FID_GET_ENCODER_CONFIG 33
+#define FID_SET_ENCODER_PID_CONFIG 34
+#define FID_GET_ENCODER_PID_CONFIG 35
 #endif
 
 #define COM_MESSAGES_USER \
@@ -88,7 +91,10 @@
 	{FID_UNDER_VOLTAGE, (message_handler_func_t)NULL}, \
 	{FID_EMERGENCY_SHUTDOWN, (message_handler_func_t)NULL}, \
 	{FID_VELOCITY_REACHED, (message_handler_func_t)NULL}, \
-	{FID_CURRENT_VELOCITY, (message_handler_func_t)NULL},
+	{FID_CURRENT_VELOCITY, (message_handler_func_t)NULL},\
+	{FID_SET_CURRENT_CALLBACK_THRESHOLD, (message_handler_func_t)set_current_callback_threshold}, \
+	{FID_GET_CURRENT_CALLBACK_THRESHOLD, (message_handler_func_t)get_current_callback_threshold}, \
+	{FID_CURRENT_THRESHOLD_REACHED, (message_handler_func_t)NULL},
 
 #ifdef ENCODER
 	{FID_ENABLE_ENCODER, (message_handler_func_t)enable_encoder}, \
@@ -100,6 +106,25 @@
 	{FID_SET_ENCODER_PID_CONFIG, (message_handler_func_t)set_encoder_pid_config}, \
 	{FID_GET_ENCODER_PID_CONFIG, (message_handler_func_t)get_encoder_pid_config},
 #endif
+
+
+typedef struct {
+	MessageHeader header;
+	char option;
+	uint16_t min;
+	uint16_t max;
+} __attribute__((__packed__)) SetCurrentCallbackThreshold;
+
+typedef struct {
+	MessageHeader header;
+} __attribute__((__packed__)) GetCurrentCallbackThreshold;
+
+typedef struct {
+	MessageHeader header;
+	char option;
+	uint16_t min;
+	uint16_t max;
+} __attribute__((__packed__)) GetCurrentCallbackThresholdReturn;
 
 typedef struct {
 	MessageHeader header;
@@ -262,6 +287,11 @@ typedef struct {
 	int16_t velocity;
 } __attribute__((__packed__)) CurrentVelocityCallback;
 
+typedef struct {
+	MessageHeader header;
+	uint16_t current;
+} __attribute__((__packed__)) CurrentThresholdReached;
+
 #ifdef ENCODER
 typedef struct {
 	MessageHeader header;
@@ -324,7 +354,8 @@ typedef struct {
 	uint8_t sample_time;
 } __attribute__((__packed__)) GetEncoderPIDConfigReturn;
 #endif
-
+void set_current_callback_threshold(const ComType com, const SetCurrentCallbackThreshold *data);
+void get_current_callback_threshold(const ComType com, const GetCurrentCallbackThreshold *data);
 void set_velocity(const ComType com, const SetVelocity *data);
 void get_velocity(const ComType com, const GetVelocity *data);
 void get_current_velocity(const ComType com, const GetCurrentVelocity *data);

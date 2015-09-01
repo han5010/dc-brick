@@ -72,6 +72,22 @@ bool encoder_tick(void);
 
 #define DC_LED_ERROR_SHUTDOWN 1
 
+#define DC_CALLBACK_VALUE_DEFAULT 0
+#define DC_CALLBACK_OPTION_DEFAULT 'x'
+#define DC_CALLBACK_MIN_DEFAULT 0
+#define DC_CALLBACK_MAX_DEFAULT 0
+
+
+typedef struct {
+	uint16_t current;
+	char option_current;
+	uint16_t min_current;
+	uint16_t max_current;
+	char option_current_save;
+	uint16_t min_current_save;
+	uint16_t max_current_save;
+} DcCallback;
+
 void new_connection(void);
 void tick_task(const uint8_t tick_type);
 

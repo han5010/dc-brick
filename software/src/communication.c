@@ -46,6 +46,7 @@ extern bool dc_enabled;
 extern uint16_t dc_pwm_frequency;
 extern uint16_t dc_current_velocity_period;
 extern uint8_t dc_mode;
+extern DcCallback dc_callback;
 
 #ifdef ENCODER
 extern bool encoder_enabled;
@@ -227,6 +228,46 @@ void get_current_velocity_period(const ComType com, const GetCurrentVelocityPeri
 	gcvpr.period        = dc_current_velocity_period;
 
 	send_blocking_with_timeout(&gcvpr, sizeof(GetCurrentVelocityPeriodReturn), com);
+}
+
+void set_current_callback_threshold(const ComType com, const SetCurrentCallbackThreshold *data) {
+	dc_callback.option_current_save = data->option;
+	dc_callback.min_current_save = data->min;
+	dc_callback.max_current_save = data->max;
+
+	if(data->option == 'o' ||
+	   data->option == 'i' ||
+	   data->option == 'x') {
+		dc_callback.option_current = data->option;
+		dc_callback.min_current = data->min;
+		dc_callback.max_current = data->max;
+	} else if(data->option == '<') {
+		dc_callback.option_current = 'o';
+		dc_callback.min_current = data->min;
+		dc_callback.max_current = 0xFFFF;
+	} else if(data->option == '>') {
+		dc_callback.option_current = 'o';
+		dc_callback.min_current = 0;
+		dc_callback.max_current = data->min;
+	} else {
+		com_return_error(data, sizeof(MessageHeader), MESSAGE_ERROR_CODE_INVALID_PARAMETER, com);
+		return;
+	}
+
+	//dc_callback.threshold_period_current_stack_current = dc_callback.debounce_period;
+	com_return_setter(com, data);
+}
+
+void get_current_callback_threshold(const ComType com, const GetCurrentCallbackThreshold *data) {
+	GetCurrentCallbackThresholdReturn gcctr;
+
+	gcctr.header        = data->header;
+	gcctr.header.length = sizeof(GetCurrentCallbackThresholdReturn);
+	gcctr.option        = dc_callback.option_current_save;
+	gcctr.min           = dc_callback.min_current_save;
+	gcctr.max           = dc_callback.max_current_save;
+
+	send_blocking_with_timeout(&gcctr, sizeof(GetCurrentCallbackThresholdReturn), com);
 }
 
 #ifdef ENCODER

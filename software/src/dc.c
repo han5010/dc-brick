@@ -82,6 +82,16 @@ uint16_t dc_current = 0;
 extern ComInfo com_info;
 extern bool usb_first_connection;
 
+DcCallback dc_callback = {
+	DC_CALLBACK_VALUE_DEFAULT,
+	DC_CALLBACK_OPTION_DEFAULT,
+	DC_CALLBACK_MIN_DEFAULT,
+	DC_CALLBACK_MAX_DEFAULT,
+	DC_CALLBACK_OPTION_DEFAULT,
+	DC_CALLBACK_MIN_DEFAULT,
+	DC_CALLBACK_MAX_DEFAULT
+};
+
 #ifdef ENCODER
 int8_t encoder_table[4][4]={{ 0,  1, -1,  0},
                             {-1,  0,  0,  1},
@@ -180,6 +190,10 @@ void tick_task(const uint8_t tick_type) {
 		dc_current_sum += adc_channel_get_data(CURRENT_CONSUMPTION_CHANNEL);
 		if(dc_tick_calc_counter >= 100) {
 			dc_current = dc_current_sum/100;
+			dc_callback.current = dc_current *
+				        CURRENT_CONSUMPTION_REFERENCE *
+				        CURRENT_CONSUMPTION_MULTIPLIER /
+				        VOLTAGE_MAX_VALUE;
 			dc_current_sum = 0;
 			dc_tick_calc_counter = 0;
 		}
@@ -244,6 +258,23 @@ void tick_task(const uint8_t tick_type) {
 		}
 	} else if(tick_type == TICK_TASK_TYPE_MESSAGE) {
 		dc_message_tick_counter++;
+
+		// Handle threshold callbacks
+		if(((dc_callback.option_current == 'o') &&
+			((dc_callback.current < dc_callback.min_current) ||
+			 (dc_callback.current > dc_callback.max_current))) ||
+		   ((dc_callback.option_current == 'i') &&
+			((dc_callback.current > dc_callback.min_current) &&
+			 (dc_callback.current < dc_callback.max_current)))) {
+
+			CurrentThresholdReached ctr;
+			com_make_default_header(&ctr, com_info.uid, sizeof(CurrentThresholdReached), FID_CURRENT_THRESHOLD_REACHED);
+			ctr.current = dc_callback.current;
+
+			send_blocking_with_timeout(&ctr,
+					                   sizeof(CurrentThresholdReached),
+					                   com_info.current);
+		}
 
 		if(dc_velocity_reached) {
 			dc_velocity_reached = false;
